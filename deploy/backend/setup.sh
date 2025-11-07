@@ -28,6 +28,13 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Create .env file from example
+cp deploy/backend/.env.example .env
+echo "IMPORTANT: Please update .env file with correct database IP:"
+echo "  nano /opt/app/.env"
+echo "  Change DB_HOST to your Database EC2 Private IP"
+echo ""
+
 # Create systemd service
 sudo tee /etc/systemd/system/fastapi-app.service > /dev/null <<EOF
 [Unit]
@@ -50,8 +57,11 @@ EOF
 # Enable and start service
 sudo systemctl daemon-reload
 sudo systemctl enable fastapi-app
-sudo systemctl start fastapi-app
 
 echo "Backend setup complete!"
-echo "Service status:"
-sudo systemctl status fastapi-app
+echo ""
+echo "NEXT STEPS:"
+echo "1. Edit .env file: nano /opt/app/.env"
+echo "2. Set DB_HOST to your Database EC2 Private IP"
+echo "3. Start service: sudo systemctl start fastapi-app"
+echo "4. Check status: sudo systemctl status fastapi-app"
