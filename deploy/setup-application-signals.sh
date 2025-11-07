@@ -110,11 +110,32 @@ EOF
 setup_backend_app_signals() {
     echo "Setting up Application Signals for Backend..."
     
+    # Check if application directory exists
+    if [ ! -d "/opt/app" ]; then
+        echo "Error: /opt/app directory not found. Please deploy the application first."
+        exit 1
+    fi
+    
     cd /opt/app
     
     # Install AWS OTEL Distro
     source venv/bin/activate
     pip install aws-opentelemetry-distro
+    
+    # Download required files from GitHub if they don't exist locally
+    if [ ! -f "deploy/backend/otel-env.sh" ]; then
+        echo "Downloading OTEL configuration files..."
+        mkdir -p deploy/backend
+        
+        # Download OTEL environment script
+        curl -s -o deploy/backend/otel-env.sh https://raw.githubusercontent.com/Leeeuijooo/cloudwatch-application-signals/main/deploy/backend/otel-env.sh
+        
+        # Download OTEL start script
+        curl -s -o deploy/backend/start-with-otel.sh https://raw.githubusercontent.com/Leeeuijooo/cloudwatch-application-signals/main/deploy/backend/start-with-otel.sh
+        
+        # Download OTEL systemd service
+        curl -s -o deploy/backend/fastapi-otel.service https://raw.githubusercontent.com/Leeeuijooo/cloudwatch-application-signals/main/deploy/backend/fastapi-otel.service
+    fi
     
     # Make scripts executable
     chmod +x deploy/backend/otel-env.sh
@@ -133,6 +154,7 @@ setup_backend_app_signals() {
     
     echo "Backend Application Signals setup complete"
     echo "To start with OTEL: sudo systemctl start fastapi-otel.service"
+    echo "Check status: sudo systemctl status fastapi-otel.service"
 }
 
 # Function to setup Application Signals for Frontend
