@@ -94,7 +94,8 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000';
+        // API Base URL - update this with your backend EC2 public IP
+        const API_BASE = '/api';
 
         async function showStatus(message, isError = false) {
             const statusDiv = document.getElementById('status');
