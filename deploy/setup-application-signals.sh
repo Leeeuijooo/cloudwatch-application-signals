@@ -22,15 +22,19 @@ install_cloudwatch_agent() {
     # Install CloudWatch Agent
     sudo rpm -U ./amazon-cloudwatch-agent.rpm
     
-    # Create CloudWatch Agent configuration for Application Signals
-    sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json > /dev/null <<EOF
+    # Create CloudWatch Agent configuration based on instance type
+    local config_type=${1:-"basic"}
+    
+    if [ "$config_type" = "backend" ]; then
+        # Backend configuration with X-Ray and OTLP support
+        sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json > /dev/null <<EOF
 {
     "agent": {
         "metrics_collection_interval": 60,
         "run_as_user": "cwagent"
     },
     "metrics": {
-        "namespace": "AWS/ApplicationELB",
+        "namespace": "AWS/EC2",
         "metrics_collected": {
             "cpu": {
                 "measurement": [
@@ -50,13 +54,50 @@ install_cloudwatch_agent() {
                     "*"
                 ]
             },
-            "diskio": {
+            "mem": {
                 "measurement": [
-                    "io_time",
-                    "read_bytes",
-                    "write_bytes",
-                    "reads",
-                    "writes"
+                    "mem_used_percent"
+                ],
+                "metrics_collection_interval": 60
+            }
+        }
+    },
+    "traces": {
+        "traces_collected": {
+            "xray": {
+                "bind_address": "127.0.0.1:2000"
+            },
+            "otlp": {
+                "grpc_endpoint": "127.0.0.1:4315",
+                "http_endpoint": "127.0.0.1:4316"
+            }
+        }
+    }
+}
+EOF
+    else
+        # Frontend/Database configuration - basic metrics only
+        sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json > /dev/null <<EOF
+{
+    "agent": {
+        "metrics_collection_interval": 60,
+        "run_as_user": "cwagent"
+    },
+    "metrics": {
+        "namespace": "AWS/EC2",
+        "metrics_collected": {
+            "cpu": {
+                "measurement": [
+                    "cpu_usage_idle",
+                    "cpu_usage_iowait",
+                    "cpu_usage_user",
+                    "cpu_usage_system"
+                ],
+                "metrics_collection_interval": 60
+            },
+            "disk": {
+                "measurement": [
+                    "used_percent"
                 ],
                 "metrics_collection_interval": 60,
                 "resources": [
@@ -68,36 +109,12 @@ install_cloudwatch_agent() {
                     "mem_used_percent"
                 ],
                 "metrics_collection_interval": 60
-            },
-            "netstat": {
-                "measurement": [
-                    "tcp_established",
-                    "tcp_time_wait"
-                ],
-                "metrics_collection_interval": 60
-            },
-            "swap": {
-                "measurement": [
-                    "swap_used_percent"
-                ],
-                "metrics_collection_interval": 60
-            }
-        }
-    },
-    "traces": {
-        "traces_collected": {
-            "xray": {
-                "bind_address": "127.0.0.1:2000",
-                "tcp_proxy_bind_address": "127.0.0.1:2000"
-            },
-            "otlp": {
-                "grpc_endpoint": "127.0.0.1:4315",
-                "http_endpoint": "127.0.0.1:4316"
             }
         }
     }
 }
 EOF
+    fi
 
     # Start CloudWatch Agent
     sudo systemctl enable amazon-cloudwatch-agent
@@ -181,19 +198,19 @@ read -p "Enter choice [1-4]: " choice
 
 case $choice in
     1)
-        install_cloudwatch_agent
+        install_cloudwatch_agent "backend"
         setup_backend_app_signals
         ;;
     2)
-        install_cloudwatch_agent
+        install_cloudwatch_agent "frontend"
         setup_frontend_app_signals
         ;;
     3)
-        install_cloudwatch_agent
+        install_cloudwatch_agent "database"
         setup_database_app_signals
         ;;
     4)
-        install_cloudwatch_agent
+        install_cloudwatch_agent "basic"
         ;;
     *)
         echo "Invalid choice"
