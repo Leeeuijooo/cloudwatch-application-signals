@@ -1,4 +1,6 @@
-# AWS Application Signals Test Application
+# CloudWatch Application Signals Test Application
+
+Simple Application for cloudwatch-application-signals (Otel Auto instrumentation)
 
 간단한 Python FastAPI 백엔드와 프론트엔드를 포함한 테스트 애플리케이션입니다.
 
