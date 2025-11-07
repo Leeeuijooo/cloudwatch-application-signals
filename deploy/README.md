@@ -110,15 +110,36 @@ cd /opt/database
 docker-compose exec mysql mysql -u testuser -ptestpass testdb
 ```
 
+## AWS Application Signals 설정
+
+배포 완료 후 AWS Application Signals를 설정하여 애플리케이션을 모니터링할 수 있습니다:
+
+```bash
+# 각 EC2에서 실행
+curl -o setup-app-signals.sh https://raw.githubusercontent.com/Leeeuijooo/cloudwatch-application-signals/main/deploy/setup-application-signals.sh
+chmod +x setup-app-signals.sh && ./setup-app-signals.sh
+```
+
+자세한 설정 방법은 [APPLICATION_SIGNALS_SETUP.md](APPLICATION_SIGNALS_SETUP.md)를 참조하세요.
+
 ## 업데이트 방법
 
-### Backend 업데이트
+### Backend 업데이트 (OTEL 포함)
 ```bash
 cd /opt/app
 git pull origin main
 source venv/bin/activate
 pip install -r requirements.txt
-sudo systemctl restart fastapi-app
+sudo systemctl restart fastapi-otel.service  # OTEL 버전
+```
+
+### Backend 업데이트 (기본 버전)
+```bash
+cd /opt/app
+git pull origin main
+source venv/bin/activate
+pip install -r requirements.txt
+sudo systemctl restart fastapi-app.service  # 기본 버전
 ```
 
 ### Frontend 업데이트

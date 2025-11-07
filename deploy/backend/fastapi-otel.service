@@ -1,0 +1,30 @@
+[Unit]
+Description=FastAPI Application with AWS Application Signals
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/app
+Environment=PATH=/opt/app/venv/bin
+
+# OpenTelemetry Environment Variables
+Environment=OTEL_METRICS_EXPORTER=none
+Environment=OTEL_LOGS_EXPORTER=none
+Environment=OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+Environment=OTEL_PYTHON_DISTRO=aws_distro
+Environment=OTEL_PYTHON_CONFIGURATOR=aws_configurator
+Environment=OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+Environment=OTEL_TRACES_SAMPLER=xray
+Environment=OTEL_TRACES_SAMPLER_ARG=endpoint=http://localhost:2000
+Environment=OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics
+Environment=OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces
+Environment=OTEL_RESOURCE_ATTRIBUTES=service.name=fastapi-backend,deployment.environment=production,aws.log.group.names=/aws/ec2/fastapi-backend
+Environment=PYTHONPATH=/opt/app
+
+ExecStart=/opt/app/venv/bin/opentelemetry-instrument /opt/app/venv/bin/python main.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
